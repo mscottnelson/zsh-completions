@@ -1,6 +1,8 @@
 zsh-completions ![GitHub release](https://img.shields.io/github/release/zsh-users/zsh-completions.svg) ![GitHub contributors](https://img.shields.io/github/contributors/zsh-users/zsh-completions.svg) [![IRC](https://img.shields.io/badge/IRC-%23zsh--completions-yellow.svg)](irc://irc.freenode.net/#zsh-completions) [![Gitter](https://badges.gitter.im/zsh-users/zsh-completions.svg)](https://gitter.im/zsh-users/zsh-completions?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 =============
 
+NOTE: This fork includes project provided completions that require manual install for my own personal workflow. These should not be pushed to upstream repository.
+
 **Additional completion definitions for [Zsh](http://www.zsh.org).**
 
 *This projects aims at gathering/developing new completion scripts that are not available in Zsh yet. The scripts may be contributed to the Zsh project when stable enough.*
