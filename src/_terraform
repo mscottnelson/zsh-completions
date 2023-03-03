@@ -1,0 +1,24 @@
+#compdef terraform
+
+_terraform_command() {
+  IFS=$'\n' tf_helpout_arr=($(terraform -help | grep -E '^  \w|-'))
+  IFS=$'\n' tf_command_arr=($(for a in "${tf_helpout_arr[@]}"; do echo $a | sed -E 's/^[[:blank:]]*([[:graph:]]*)[[:space:]]+(.*)/\1: \2/'; done))
+
+  if ((CURRENT == 1)); then
+    _describe -t commands 'terraform commands' tf_command_arr
+  else
+    local curcontext="$curcontext"
+    cmd="${${_tf_command_arr[(r)$words[1]:*]%%:*}}"
+    if (($#cmd)); then
+      if (( $+functions[_terraform_$cmd] )); then
+        _terraform_$cmd
+      else
+        _message "no options for $cmd"
+      fi
+    else
+      _message "no more options"
+    fi
+  fi
+}
+
+_arguments "*::terraform commands:_terraform_command"
