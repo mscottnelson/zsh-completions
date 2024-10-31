@@ -14,19 +14,19 @@ stable enough._
 
 ### Using packages
 
-| System                                      | Package                                                                                                                                                                                            |
-| ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Debian / Ubuntu                             | [zsh-completions OBS repository](https://software.opensuse.org/download.html?project=shells%3Azsh-users%3Azsh-completions&package=zsh-completions)                                                 |
-| Fedora / CentOS / RHEL / Scientific Linux   | [zsh-completions OBS repository](https://software.opensuse.org/download.html?project=shells%3Azsh-users%3Azsh-completions&package=zsh-completions)                                                 |
-| OpenSUSE / SLE                              | [zsh-completions OBS repository](https://software.opensuse.org/download.html?project=shells%3Azsh-users%3Azsh-completions&package=zsh-completions)                                                 |
-| Arch Linux / Manjaro / Antergos / Hyperbola | [zsh-completions](https://www.archlinux.org/packages/zsh-completions), [zsh-completions-git](https://aur.archlinux.org/packages/zsh-completions-git)                                               |
-| Gentoo / Funtoo                             | [app-shells/zsh-completions](https://packages.gentoo.org/packages/app-shells/zsh-completions)                                                                                                      |
-| NixOS                                       | [zsh-completions](https://github.com/NixOS/nixpkgs/blob/master/pkgs/shells/zsh/zsh-completions/default.nix)                                                                                        |
-| Void Linux                                  | [zsh-completions](https://github.com/void-linux/void-packages/blob/master/srcpkgs/zsh-completions/template)                                                                                        |
-| Slackware                                   | [Slackbuilds](https://slackbuilds.org/repository/14.2/system/zsh-completions/)                                                                                                                     |
-| macOS                                       | [homebrew](https://github.com/Homebrew/homebrew-core/blob/master/Formula/zsh-completions.rb), [MacPorts](https://github.com/macports/macports-ports/blob/master/sysutils/zsh-completions/Portfile) |
-| NetBSD                                      | [pkgsrc](https://ftp.netbsd.org/pub/pkgsrc/current/pkgsrc/shells/zsh-completions/README.html)                                                                                                      |
-| FreeBSD                                     | [shells/zsh-completions](https://www.freshports.org/shells/zsh-completions)                                                                                                                        |
+| System  | Package |
+| ------------- | ------------- |
+| Debian / Ubuntu | [zsh-completions OBS repository](https://software.opensuse.org/download.html?project=shells%3Azsh-users%3Azsh-completions&package=zsh-completions) |
+| Fedora / CentOS / RHEL / Scientific Linux | [zsh-completions OBS repository](https://software.opensuse.org/download.html?project=shells%3Azsh-users%3Azsh-completions&package=zsh-completions) |
+| OpenSUSE / SLE | [zsh-completions OBS repository](https://software.opensuse.org/download.html?project=shells%3Azsh-users%3Azsh-completions&package=zsh-completions) |
+| Arch Linux / Manjaro / Antergos / Hyperbola | [zsh-completions](https://www.archlinux.org/packages/zsh-completions), [zsh-completions-git](https://aur.archlinux.org/packages/zsh-completions-git) |
+| Gentoo / Funtoo | [app-shells/zsh-completions](https://packages.gentoo.org/packages/app-shells/zsh-completions)  |
+| NixOS | [zsh-completions](https://github.com/NixOS/nixpkgs/blob/master/pkgs/shells/zsh/zsh-completions/default.nix) |
+| Void Linux | [zsh-completions](https://github.com/void-linux/void-packages/blob/master/srcpkgs/zsh-completions/template) |
+| Slackware | [Slackbuilds](https://slackbuilds.org/repository/14.2/system/zsh-completions/) |
+| macOS | [homebrew](https://github.com/Homebrew/homebrew-core/blob/master/Formula/z/zsh-completions.rb), [MacPorts](https://github.com/macports/macports-ports/blob/master/sysutils/zsh-completions/Portfile)  |
+| NetBSD | [pkgsrc](https://ftp.netbsd.org/pub/pkgsrc/current/pkgsrc/shells/zsh-completions/README.html)  |
+| FreeBSD | [shells/zsh-completions](https://www.freshports.org/shells/zsh-completions)  |
 
 ### Using zsh frameworks
 
