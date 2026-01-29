@@ -1,205 +1,113 @@
 #compdef sqlcmd
 
-# zsh completion for sqlcmd                               -*- shell-script -*-
+# Static zsh completion for sqlcmd (workaround for __complete panic in v1.9.0)
+# Original dynamic completion panics: github.com/microsoft/go-sqlcmd/cmd/sqlcmd.isFlag
 
-__sqlcmd_debug()
-{
-    local file="$BASH_COMP_DEBUG_FILE"
-    if [[ -n ${file} ]]; then
-        echo "$*" >> "${file}"
-    fi
+_sqlcmd() {
+    local -a commands
+    commands=(
+        'config:Modify sqlcmd configuration'
+        'create:Create a SQL Server'
+        'delete:Delete a SQL Server'
+        'help:Help about any command'
+        'open:Open a tool for the current context'
+        'query:Run a query against the current context'
+        'start:Start the current context'
+        'stop:Stop the current context'
+    )
+
+    local -a global_opts
+    global_opts=(
+        '(-h --help)'{-h,--help}'[help for sqlcmd]'
+        '--version[print version of sqlcmd]'
+        '--verbosity[log level: 1=error, 2=warn, 3=info, 4=debug]:level:(1 2 3 4)'
+    )
+
+    local -a query_opts
+    query_opts=(
+        '(-S --server)'{-S,--server}'[server connection string]:server:'
+        '(-U --user-name)'{-U,--user-name}'[login ID]:user:'
+        '(-P --password)'{-P,--password}'[password]:password:'
+        '(-d --database-name)'{-d,--database-name}'[database name]:database:'
+        '(-Q --query)'{-Q,--query}'[query to execute]:query:'
+        '(-i --input-file)'{-i,--input-file}'[input file]:file:_files'
+        '(-o --output-file)'{-o,--output-file}'[output file]:file:_files'
+        '(-E --use-trusted-connection)'{-E,--use-trusted-connection}'[use trusted connection]'
+        '(-C --trust-server-certificate)'{-C,--trust-server-certificate}'[trust server certificate]'
+        '(-N --encrypt-connection)'{-N,--encrypt-connection}'[encrypt connection]:mode:(true false strict)'
+        '(-t --query-timeout)'{-t,--query-timeout}'[query timeout in seconds]:seconds:'
+        '(-l --login-timeout)'{-l,--login-timeout}'[login timeout in seconds]:seconds:'
+        '(-s --col-separator)'{-s,--col-separator}'[column separator]:separator:'
+        '(-w --screen-width)'{-w,--screen-width}'[screen width]:width:'
+        '(-W --trim-spaces)'{-W,--trim-spaces}'[remove trailing spaces]'
+        '(-h --headers)'{-h,--headers}'[rows between headers]:rows:'
+        '(-k --remove-control-chars)'{-k,--remove-control-chars}'[remove control characters]:level:(1 2)'
+        '--no-cp437[disable CP437 translation]'
+        '-b[on error batch abort]'
+        '-e[echo input]'
+        '-m[error level]:level:'
+        '-r[msgs to stderr]:level:(0 1)'
+        '-v[scripting variable]:var=value:'
+    )
+
+    _arguments -C \
+        $global_opts \
+        $query_opts \
+        '1:command:->command' \
+        '*::args:->args'
+
+    case "$state" in
+        command)
+            _describe -t commands 'sqlcmd commands' commands
+            ;;
+        args)
+            case "${words[1]}" in
+                query)
+                    _arguments $query_opts
+                    ;;
+                config)
+                    local -a config_cmds
+                    config_cmds=(
+                        'add-endpoint:Add an endpoint to the config'
+                        'add-user:Add a user to the config'
+                        'connection-strings:View connection strings'
+                        'current-context:Display current context'
+                        'delete-context:Delete a context'
+                        'delete-endpoint:Delete an endpoint'
+                        'delete-user:Delete a user'
+                        'get-contexts:List all contexts'
+                        'get-endpoints:List all endpoints'
+                        'get-users:List all users'
+                        'use-context:Switch context'
+                        'view:View config file'
+                    )
+                    _describe -t commands 'config commands' config_cmds
+                    ;;
+                create)
+                    local -a create_cmds
+                    create_cmds=(
+                        'mssql:Create SQL Server container'
+                        'ado:Create Azure DevOps context'
+                    )
+                    _describe -t commands 'create commands' create_cmds
+                    ;;
+                open)
+                    local -a open_cmds
+                    open_cmds=(
+                        'ads:Open Azure Data Studio'
+                        'vscode:Open VS Code'
+                    )
+                    _describe -t commands 'open commands' open_cmds
+                    ;;
+                help)
+                    _describe -t commands 'sqlcmd commands' commands
+                    ;;
+                *)
+                    _arguments $global_opts
+                    ;;
+            esac
+            ;;
+    esac
 }
 
-_sqlcmd()
-{
-    local shellCompDirectiveError=1
-    local shellCompDirectiveNoSpace=2
-    local shellCompDirectiveNoFileComp=4
-    local shellCompDirectiveFilterFileExt=8
-    local shellCompDirectiveFilterDirs=16
-
-    local lastParam lastChar flagPrefix requestComp out directive comp lastComp noSpace
-    local -a completions
-
-    __sqlcmd_debug "\n========= starting completion logic =========="
-    __sqlcmd_debug "CURRENT: ${CURRENT}, words[*]: ${words[*]}"
-
-    # The user could have moved the cursor backwards on the command-line.
-    # We need to trigger completion from the $CURRENT location, so we need
-    # to truncate the command-line ($words) up to the $CURRENT location.
-    # (We cannot use $CURSOR as its value does not work when a command is an alias.)
-    words=("${=words[1,CURRENT]}")
-    __sqlcmd_debug "Truncated words[*]: ${words[*]},"
-
-    lastParam=${words[-1]}
-    lastChar=${lastParam[-1]}
-    __sqlcmd_debug "lastParam: ${lastParam}, lastChar: ${lastChar}"
-
-    # For zsh, when completing a flag with an = (e.g., sqlcmd -n=<TAB>)
-    # completions must be prefixed with the flag
-    setopt local_options BASH_REMATCH
-    if [[ "${lastParam}" =~ '-.*=' ]]; then
-        # We are dealing with a flag with an =
-        flagPrefix="-P ${BASH_REMATCH}"
-    fi
-
-    # Prepare the command to obtain completions
-    requestComp="${words[1]} __complete ${words[2,-1]}"
-    if [ "${lastChar}" = "" ]; then
-        # If the last parameter is complete (there is a space following it)
-        # We add an extra empty parameter so we can indicate this to the go completion code.
-        __sqlcmd_debug "Adding extra empty parameter"
-        requestComp="${requestComp} \"\""
-    fi
-
-    __sqlcmd_debug "About to call: eval ${requestComp}"
-
-    # Use eval to handle any environment variables and such
-    out=$(eval ${requestComp} 2>/dev/null)
-    __sqlcmd_debug "completion output: ${out}"
-
-    # Extract the directive integer following a : from the last line
-    local lastLine
-    while IFS='\n' read -r line; do
-        lastLine=${line}
-    done < <(printf "%s\n" "${out[@]}")
-    __sqlcmd_debug "last line: ${lastLine}"
-
-    if [ "${lastLine[1]}" = : ]; then
-        directive=${lastLine[2,-1]}
-        # Remove the directive including the : and the newline
-        local suffix
-        (( suffix=${#lastLine}+2))
-        out=${out[1,-$suffix]}
-    else
-        # There is no directive specified.  Leave $out as is.
-        __sqlcmd_debug "No directive found.  Setting do default"
-        directive=0
-    fi
-
-    __sqlcmd_debug "directive: ${directive}"
-    __sqlcmd_debug "completions: ${out}"
-    __sqlcmd_debug "flagPrefix: ${flagPrefix}"
-
-    if [ $((directive & shellCompDirectiveError)) -ne 0 ]; then
-        __sqlcmd_debug "Completion received error. Ignoring completions."
-        return
-    fi
-
-    local activeHelpMarker="_activeHelp_ "
-    local endIndex=${#activeHelpMarker}
-    local startIndex=$((${#activeHelpMarker}+1))
-    local hasActiveHelp=0
-    while IFS='\n' read -r comp; do
-        # Check if this is an activeHelp statement (i.e., prefixed with $activeHelpMarker)
-        if [ "${comp[1,$endIndex]}" = "$activeHelpMarker" ];then
-            __sqlcmd_debug "ActiveHelp found: $comp"
-            comp="${comp[$startIndex,-1]}"
-            if [ -n "$comp" ]; then
-                compadd -x "${comp}"
-                __sqlcmd_debug "ActiveHelp will need delimiter"
-                hasActiveHelp=1
-            fi
-
-            continue
-        fi
-
-        if [ -n "$comp" ]; then
-            # If requested, completions are returned with a description.
-            # The description is preceded by a TAB character.
-            # For zsh's _describe, we need to use a : instead of a TAB.
-            # We first need to escape any : as part of the completion itself.
-            comp=${comp//:/\\:}
-
-            local tab="$(printf '\t')"
-            comp=${comp//$tab/:}
-
-            __sqlcmd_debug "Adding completion: ${comp}"
-            completions+=${comp}
-            lastComp=$comp
-        fi
-    done < <(printf "%s\n" "${out[@]}")
-
-    # Add a delimiter after the activeHelp statements, but only if:
-    # - there are completions following the activeHelp statements, or
-    # - file completion will be performed (so there will be choices after the activeHelp)
-    if [ $hasActiveHelp -eq 1 ]; then
-        if [ ${#completions} -ne 0 ] || [ $((directive & shellCompDirectiveNoFileComp)) -eq 0 ]; then
-            __sqlcmd_debug "Adding activeHelp delimiter"
-            compadd -x "--"
-            hasActiveHelp=0
-        fi
-    fi
-
-    if [ $((directive & shellCompDirectiveNoSpace)) -ne 0 ]; then
-        __sqlcmd_debug "Activating nospace."
-        noSpace="-S ''"
-    fi
-
-    if [ $((directive & shellCompDirectiveFilterFileExt)) -ne 0 ]; then
-        # File extension filtering
-        local filteringCmd
-        filteringCmd='_files'
-        for filter in ${completions[@]}; do
-            if [ ${filter[1]} != '*' ]; then
-                # zsh requires a glob pattern to do file filtering
-                filter="\*.$filter"
-            fi
-            filteringCmd+=" -g $filter"
-        done
-        filteringCmd+=" ${flagPrefix}"
-
-        __sqlcmd_debug "File filtering command: $filteringCmd"
-        _arguments '*:filename:'"$filteringCmd"
-    elif [ $((directive & shellCompDirectiveFilterDirs)) -ne 0 ]; then
-        # File completion for directories only
-        local subdir
-        subdir="${completions[1]}"
-        if [ -n "$subdir" ]; then
-            __sqlcmd_debug "Listing directories in $subdir"
-            pushd "${subdir}" >/dev/null 2>&1
-        else
-            __sqlcmd_debug "Listing directories in ."
-        fi
-
-        local result
-        _arguments '*:dirname:_files -/'" ${flagPrefix}"
-        result=$?
-        if [ -n "$subdir" ]; then
-            popd >/dev/null 2>&1
-        fi
-        return $result
-    else
-        __sqlcmd_debug "Calling _describe"
-        if eval _describe "completions" completions $flagPrefix $noSpace; then
-            __sqlcmd_debug "_describe found some completions"
-
-            # Return the success of having called _describe
-            return 0
-        else
-            __sqlcmd_debug "_describe did not find completions."
-            __sqlcmd_debug "Checking if we should do file completion."
-            if [ $((directive & shellCompDirectiveNoFileComp)) -ne 0 ]; then
-                __sqlcmd_debug "deactivating file completion"
-
-                # We must return an error code here to let zsh know that there were no
-                # completions found by _describe; this is what will trigger other
-                # matching algorithms to attempt to find completions.
-                # For example zsh can match letters in the middle of words.
-                return 1
-            else
-                # Perform file completion
-                __sqlcmd_debug "Activating file completion"
-
-                # We must return the result of this command, so it must be the
-                # last command, or else we must store its result to return it.
-                _arguments '*:filename:_files'" ${flagPrefix}"
-            fi
-        fi
-    fi
-}
-
-# don't run the completion function when being source-ed or eval-ed
-if [ "$funcstack[1]" = "_sqlcmd" ]; then
-    _sqlcmd
-fi
+_sqlcmd "$@"
