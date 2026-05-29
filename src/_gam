@@ -1,0 +1,167 @@
+#compdef gam
+# ------------------------------------------------------------------------------
+# Description
+# -----------
+#
+#  Minimal completion script for GAM7 (https://github.com/GAM-team/GAM),
+#  the command-line tool for Google Workspace administration.
+#
+#  Covers the top-level verb (word 1) and, for verb-style commands
+#  (info, show, print, create, add, update, delete, remove, undelete,
+#  report, oauth, config), the second-word object. For selector-style
+#  commands (user, users, group, groups, ou, ous, cros, mobile, domain,
+#  all) word 2 is a freeform target and word 3 is a verb that we
+#  complete against a small, common subset.
+#
+#  Anything past that falls back to file completion.
+#
+# ------------------------------------------------------------------------------
+
+_gam() {
+  local context state state_descr line
+  typeset -A opt_args
+
+  _arguments -C \
+    '1: :->verb' \
+    '2: :->arg2' \
+    '3: :->arg3' \
+    '*::rest:_files'
+
+  case $state in
+    (verb)
+      local -a verbs
+      verbs=(
+        # selectors
+        'user:run a verb against one user'
+        'users:run a verb against multiple users'
+        'group:run a verb against one group'
+        'groups:run a verb against multiple groups'
+        'ou:run a verb against an org unit'
+        'ous:run a verb against multiple org units'
+        'cros:run a verb against ChromeOS devices'
+        'mobile:run a verb against a mobile device'
+        'domain:run a verb against the domain'
+        'all:run a verb against all of a kind'
+        # verbs
+        'info:show details for an object'
+        'show:show items of a kind'
+        'print:print a CSV of items'
+        'create:create an object'
+        'add:add a member or item'
+        'update:update an object'
+        'delete:delete an object'
+        'remove:remove a member or item'
+        'undelete:undelete an object'
+        'report:run an admin report'
+        'whatis:identify an email address'
+        'oauth:manage OAuth credentials'
+        'config:manage GAM configuration'
+        'select:switch the active GAM section'
+        'redirect:redirect output for the next command'
+        'csv:read a CSV and dispatch a sub-command'
+        'loop:run a sub-command across rows of a CSV'
+        'multiprocess:run a batch of sub-commands in parallel'
+        'tls:configure TLS for the next command'
+        'version:print version information'
+        'help:show help'
+      )
+      _describe -t verbs 'gam verb' verbs
+      ;;
+
+    (arg2)
+      case $words[2] in
+        (info)
+          local -a objs=(
+            user group ou domain schema admin license site verify
+            mobile cros vaultmatter transfer customer instance
+          )
+          _describe -t objects 'info object' objs
+          ;;
+        (show)
+          local -a objs=(
+            schemas admins privileges roles licenses sites tokens
+            asps verifications guardians vaultmatters transfers
+            customer domains domainaliases groupmembers ous
+          )
+          _describe -t objects 'show object' objs
+          ;;
+        (print)
+          local -a objs=(
+            users groups groupmembers ous orgs aliases mobile cros
+            licenses tokens admins schemas roles transfers vaultmatters
+            domains domainaliases sites courses printers reports
+          )
+          _describe -t objects 'print object' objs
+          ;;
+        (create|add)
+          local -a objs=(
+            user group ou alias schema admin transfer site
+            vaultmatter vaulthold vaultexport verify license
+            domain domainalias resoldcustomer resoldsubscription
+            guardian printer course
+          )
+          _describe -t objects "$words[2] object" objs
+          ;;
+        (update|delete|undelete|remove)
+          local -a objs=(
+            user group ou alias schema admin license site
+            vaultmatter vaulthold vaultexport mobile cros transfer
+            domain domainalias guardian printer course
+          )
+          _describe -t objects "$words[2] object" objs
+          ;;
+        (report)
+          local -a objs=(
+            users user customers customer admin drive token
+            mobile login calendar groups
+          )
+          _describe -t reports 'report kind' objs
+          ;;
+        (oauth)
+          local -a subs=(
+            create delete info refresh export import update
+          )
+          _describe -t oauth-subverbs 'oauth sub-verb' subs
+          ;;
+        (config)
+          local -a subs=(
+            verify make print create select reset delete
+          )
+          _describe -t config-subverbs 'config sub-verb' subs
+          ;;
+        (user|users|group|groups|ou|ous|cros|mobile|domain|all)
+          _message -e target "${words[2]} target (email, name, path, ...)"
+          ;;
+        (*)
+          _message -e arg "argument for $words[2]"
+          ;;
+      esac
+      ;;
+
+    (arg3)
+      case $words[2] in
+        (user|users|group|groups|ou|ous|cros|mobile|domain|all)
+          local -a verbs=(
+            info show print add create update delete remove undelete
+            sendemail signout deprovision suspend unsuspend transfer
+            modify check copy move sync
+          )
+          _describe -t selector-verbs "verb for '$words[2]'" verbs
+          ;;
+        (*)
+          _files
+          ;;
+      esac
+      ;;
+  esac
+}
+
+_gam "$@"
+
+# Local Variables:
+# mode: Shell-Script
+# sh-indentation: 2
+# indent-tabs-mode: nil
+# sh-basic-offset: 2
+# End:
+# vim: ft=zsh sw=2 ts=2 et
