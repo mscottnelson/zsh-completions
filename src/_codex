@@ -1,0 +1,17 @@
+#compdef codex
+# ------------------------------------------------------------------------------
+# Description
+# -----------
+#
+#  Completion for the OpenAI Codex CLI. codex generates its own (clap) script
+#  and auto-updates, so a committed copy would go stale: this evaluates the
+#  installed version's script on first use, replacing itself with it.
+#
+# ------------------------------------------------------------------------------
+
+local src=$(codex completion zsh 2>/dev/null)
+[[ -n $src ]] || return 1
+eval "$src"
+# The script's trailer tests funcstack[1], which eval makes "(eval)", so it only
+# runs compdef; call the definition it just installed for this first request.
+_codex "$@"

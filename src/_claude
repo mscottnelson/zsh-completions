@@ -1,0 +1,96 @@
+#compdef claude
+# ------------------------------------------------------------------------------
+# Description
+# -----------
+#
+#  Completion for Claude Code. It ships no completion generator and updates
+#  itself, so this parses `claude [subcommand...] --help` (commander.js output)
+#  on demand: subcommands at every depth, options and their arguments, and
+#  `(choices: ...)` as argument values. Each help page is read once per shell.
+#
+# ------------------------------------------------------------------------------
+
+typeset -gA _claude_help
+
+# Fills the caller's subs (name:description) and specs (_arguments) from `$@ --help`.
+__claude_parse() {
+  local key="$*" line entry kind head desc d arg name action excl star sep f
+  local -a entries flags vals match mbegin mend
+  (( ${+_claude_help[$key]} )) || _claude_help[$key]=$(_call_program help "$@" --help 2>/dev/null)
+  subs=() specs=()
+
+  # One entry per option or command. Wrapped lines join with two spaces, so the
+  # first double space always ends the head even when the description wrapped.
+  for line in "${(@f)_claude_help[$key]}"; do
+    if [[ $line == [A-Z][a-z]#: ]]; then
+      kind=${line[1]}
+    elif [[ $kind == O && $line == '  -'* || $kind == C && $line == '  '[a-z]* ]]; then
+      entries+=("$kind${line#  }")
+    elif [[ $kind == [OC] && $#entries -gt 0 ]]; then
+      entries[-1]+="  ${line##[[:space:]]#}"
+    fi
+  done
+
+  for entry in $entries; do
+    head=${entry[2,-1]%%  *}
+    desc=${${entry[2,-1]#$head}//[[:space:]]##/ }
+    # First sentence, minus choices/default; ". " before a capital ends one, so "e.g. -e" survives.
+    d=${${desc//\((choices|default):[^\)]#\)/}%%. [A-Z]*}
+    d=${${d# }%%[[:space:].]#}
+
+    if [[ ${entry[1]} == C ]]; then
+      for name in ${(s:|:)${head%% *}}; subs+=("$name:$d")
+      continue
+    fi
+    d=${d//(#m)[\\\[\]]/\\$MATCH}
+
+    flags=(${(s:, :)${head%% [<\[]*}})
+    arg=${(M)head%%[<\[]*}
+    name=${arg//[<>\[\].]/}
+    if [[ $desc =~ '\(choices: ([^)]*)\)' ]]; then
+      vals=(${(Q)${(s:, :)match[1]}:#default:*})
+      action="(${(j: :)${(@q)vals}})"
+    elif [[ $name == *dir* ]]; then
+      action='_files -/'
+    elif [[ $name == *(path|file|config)* ]]; then
+      action=_files
+    else
+      action=' '
+    fi
+    # Variadic options repeat, so they cannot exclude their own aliases.
+    star= excl=
+    [[ $arg == *...* ]] && star='*'
+    [[ -z $star && $#flags -gt 1 ]] && excl="(${flags[*]})"
+    for f in $flags; do
+      [[ $f == --* ]] && sep='=' || sep='+'
+      case $arg in
+        '')   specs+=("${excl}${f}[${d}]") ;;
+        '<'*) specs+=("${excl}${star}${f}${sep}[${d}]:${name}:${action}") ;;
+        *)    specs+=("${excl}${star}${f}[${d}]::${name}:${action}") ;;
+      esac
+    done
+  done
+}
+
+_claude() {
+  local -a cmd=($words[1]) subs specs
+  local i last=1
+  __claude_parse $cmd
+  for (( i = 2; i < CURRENT; i++ )); do
+    [[ $words[i] == -* ]] && continue
+    (( ${subs[(I)${(b)words[i]}:*]} )) || break
+    cmd+=($words[i]) last=$i
+    __claude_parse $cmd
+  done
+  if (( last > 1 )); then
+    words=("${(@)words[last,-1]}")
+    (( CURRENT -= last - 1 ))
+  fi
+  if (( $#subs )); then
+    _arguments -s -S : $specs '1: :{_describe -t commands command subs}' '*: :_default'
+  else
+    _arguments -s -S : $specs '*: :_default'
+  fi
+}
+
+_claude "$@"
